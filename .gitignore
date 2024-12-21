@@ -1,0 +1,6 @@
+venv
+dist
+build
+ayonix.egg-info
+setup.py
+MANIFEST.in
