@@ -39,6 +39,8 @@ def call_api(url: str, method: str, headers: dict, data: dict, only_content: boo
         print(f"{COLOR_YELLOW}[Calling API at {url}]{COLOR_RESET}")
     try:
         start = time.time()
+        if not url.startswith("http://") or not url.startswith("https://"):
+            url = f"https://{url}"
         response = requests.request(method, url, headers=headers, json=data)
         end = time.time()
         response.raise_for_status()  # Raise an exception for HTTP errors
