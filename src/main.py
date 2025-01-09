@@ -2,6 +2,7 @@ import argparse
 import requests
 import json
 import time
+import urllib3
 
 COLOR_BLUE = '\033[94m'
 COLOR_GREEN = '\033[92m'
@@ -22,7 +23,7 @@ COLOR_LIGHT_RED = '\033[91m'
 COLOR_LIGHT_PURPLE = '\033[95m'
 UNDERLINE = '\033[4m'
 
-def call_api(url: str, method: str, headers: dict, data: dict, only_content: bool, show_metrics: bool, average_response_time: int) -> None:
+def call_api(url: str, method: str, headers: dict, data: dict, only_content: bool, only_res_code: bool, show_metrics: bool, average_response_time: int) -> None:
     
     if average_response_time:
         response_times = []
@@ -37,15 +38,42 @@ def call_api(url: str, method: str, headers: dict, data: dict, only_content: boo
     
     if not only_content:
         print(f"{COLOR_YELLOW}[Calling API at {url}]{COLOR_RESET}")
+        
+    if only_res_code:
+        response = requests.request(method, url, headers=headers, json=data)
+        print(f"{COLOR_BLUE}Response status code: {COLOR_RESET}{COLOR_GREEN}{response.status_code}{COLOR_RESET}")
+        return    
+    
+    file = open("src/helper/solutionslist.json", "r")   
+    data = json.load(file)
+    
+    
     try:
         start = time.time()
-        if not url.startswith("http://") or not url.startswith("https://"):
-            url = f"https://{url}"
         response = requests.request(method, url, headers=headers, json=data)
         end = time.time()
         response.raise_for_status()  # Raise an exception for HTTP errors
+    
+    
+    except urllib3.exceptions.MaxRetryError:
+        print(f"{COLOR_RED}Error: Max Retry Error{data["urllib3.MaxRetryError"]["commonsolution"]}{COLOR_RESET}")
+        return
+    
+    except requests.exceptions.ConnectionError:
+        print(f"{COLOR_RED}Error: Connection Error{data["ConnectionError"]["commonsolution"]}{COLOR_RESET}")
+        return
+    
+    except requests.exceptions.Timeout:
+        print(f"{COLOR_RED}Error: Timeout Error{data["TimeoutError"]["commonsolution"]}{COLOR_RESET}")
+        return
+    
     except requests.exceptions.RequestException as e:
         print(f"{COLOR_RED}Error: {e}{COLOR_RESET}")
+        return
+    
+    except Exception as e:
+        print(f"{COLOR_RED}Error: {e}"
+              f"No common solution found.{COLOR_RESET}")
         return
     
     if only_content:
@@ -65,9 +93,10 @@ def main() -> None:
     parser.add_argument("url", type=str, help="URL to send request to")
     parser.add_argument("--method", type=str, default="GET", help=f"HTTP method to use [DEFAULT: {COLOR_CYAN}GET{COLOR_RESET}]")
     parser.add_argument("-H", "--header", type=json.loads, help="Headers to include in request as a JSON string")
-    parser.add_argument("-d", "--data", type=json.loads, help="Data to include in request as a JSON string")
+    parser.add_argument("-b", "--body", type=json.loads, help="Body data to include in request as a JSON string")
     
     parser.add_argument("--only-content", action="store_true", help="Only print the content of the response")
+    parser.add_argument("--only-res-code", action="store_true", help="Only print the response code")
     parser.add_argument("-m", "--metrics", action="store_true", help="Print metrics of the response")
     
     parser.add_argument("-a", "--average-response-time", type=int, nargs="?", help="Print the average response time of the API")
@@ -77,7 +106,7 @@ def main() -> None:
     headers = args.header if args.header else {}
     data = args.data if args.data else {}
     
-    call_api(args.url, args.method, headers, data, args.only_content, args.metrics, args.average_response_time if args.average_response_time else 0)
+    call_api(args.url, args.method, headers, data, args.only_content, args.only_res_code, args.metrics, args.average_response_time if args.average_response_time else 0)
 
 if __name__ == "__main__":
     main()

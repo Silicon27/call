@@ -1,0 +1,15 @@
+{
+    "ConnectionError": {
+        "title": "Connection Error",
+        "commonsolution": "\n-Check your internet connection and try again\n-Called endpoint is not available\n-Check the endpoint URL"
+    },
+    "TimeoutError": {
+        "title": "Timeout Error",
+        "commonsolution": "\n-Check your internet connection and try again\n-Called endpoint is not available\n-Check the endpoint URL\n-Check server response code"
+    },
+    "urllib3.MaxRetryError": {
+        "title": "Max Retry Error",
+        "commonsolution": "\n-Check your internet connection and try again\n-Called endpoint is not available\n-Check the endpoint URL\n-Check server response code"
+    }
+
+}
